@@ -4,29 +4,42 @@ import pandas as pd
 
 st.title("Timetable Extractor")
 
-teacher_name = "Muhammad Jawad Rafiq"
+teacher_name = "muhammad jawad rafiq"
 
 uploaded_file = st.file_uploader("Upload Timetable PDF", type="pdf")
 
 if uploaded_file:
 
-    rows = []
+    full_text = ""
 
     with pdfplumber.open(uploaded_file) as pdf:
         for page in pdf.pages:
             text = page.extract_text()
-
             if text:
-                for line in text.split("\n"):
-                    if teacher_name.lower() in line.lower():
-                        rows.append(line)
+                full_text += text.lower()
 
-    if rows:
-        df = pd.DataFrame(rows, columns=["Timetable Rows"])
+    lines = full_text.split("\n")
+
+    results = []
+
+    for i in range(len(lines)):
+        block = " ".join(lines[i:i+3])   # combine nearby lines
+
+        if teacher_name in block:
+            results.append(block)
+
+    if results:
+
+        df = pd.DataFrame(results, columns=["Matched Timetable Rows"])
+
+        st.success(f"Found {len(results)} matches")
         st.dataframe(df)
 
         st.download_button(
             "Download CSV",
             df.to_csv(index=False),
-            "schedule.csv"
+            "jawad_schedule.csv"
         )
+
+    else:
+        st.warning("No matches found")
