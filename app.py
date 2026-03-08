@@ -4,33 +4,36 @@ import pandas as pd
 
 st.title("Timetable Extractor")
 
-teacher = "Muhammad Jawad Rafiq"
+teacher = "muhammad jawad rafiq"
 
 uploaded_file = st.file_uploader("Upload Timetable PDF", type="pdf")
 
 if uploaded_file:
 
-    rows = []
+    lines = []
 
     with pdfplumber.open(uploaded_file) as pdf:
-
         for page in pdf.pages:
+            text = page.extract_text()
 
-            tables = page.extract_tables()
+            if text:
+                lines.extend(text.split("\n"))
 
-            for table in tables:
-                for row in table:
-                    if row:
-                        text = " ".join([str(cell) for cell in row if cell])
+    results = []
 
-                        if teacher.lower() in text.lower():
-                            rows.append(row)
+    for i,line in enumerate(lines):
 
-    if rows:
+        if teacher in line.lower():
 
-        df = pd.DataFrame(rows)
+            context = " | ".join(lines[max(0,i-2): i+3])
 
-        st.success(f"{len(rows)} classes found")
+            results.append(context)
+
+    if results:
+
+        df = pd.DataFrame(results, columns=["Schedule Context"])
+
+        st.success(f"{len(results)} entries found")
         st.dataframe(df)
 
         st.download_button(
@@ -40,4 +43,4 @@ if uploaded_file:
         )
 
     else:
-        st.warning("No schedule found for this teacher.")
+        st.warning("No matches found")
